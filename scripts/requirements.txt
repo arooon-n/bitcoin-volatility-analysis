@@ -1,0 +1,4 @@
+# Verify dependencies for historical data download script
+pyarrow>=12.0.0
+requests==2.31.0
+PyYAML==6.0.1

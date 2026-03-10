@@ -1,0 +1,61 @@
+# Bitcoin Volatility Analysis System Configuration File
+# All configurable parameters are centralized here
+# Replace YOUR_API_KEY_HERE with your free CryptoCompare API key from https://www.cryptocompare.com/cryptopian/api-keys
+
+# API Configuration
+api:
+  # Base URL for CryptoCompare API
+  base_url: "https://min-api.cryptocompare.com"
+  # Your CryptoCompare API key - REQUIRED
+  key: "d73958d2c7cedc89a4b494874b2d030365d39c6789c5a060eed4161c5995a222"
+  # Interval between API calls in seconds (10 seconds = 6 calls per minute)
+  fetch_interval_seconds: 10
+
+# Kafka Configuration
+kafka:
+  # Kafka broker address (from host machine / producer)
+  bootstrap_servers: "localhost:9092"
+  # Kafka broker address for Spark running inside Docker
+  internal_bootstrap_servers: "kafka:9093"
+  # Topic name for Bitcoin price data stream
+  topic_prices: "bitcoin-prices"
+
+# HDFS Configuration
+hdfs:
+  # HDFS namenode URI (Docker service name)
+  namenode: "hdfs://namenode:8020"
+  paths:
+    # Directory for historical bulk-loaded data
+    historical: "/bitcoin/historical"
+    # Checkpoint location for streaming job
+    checkpoints_stream: "/bitcoin/checkpoints/stream"
+    # Checkpoint location for latest data streaming to local filesystem
+    checkpoints_latest: "/bitcoin/checkpoints/latest"
+    # Directory for batch analysis output
+    analysis: "/bitcoin/analysis"
+
+# Spark Configuration
+spark:
+  # Application name that appears in Spark UI
+  app_name: "BitcoinVolatilityAnalysis"
+  # Spark master URL - local[*] uses all available cores
+  master: "local[*]"
+  # Number of shuffle partitions (keep low for better performance on limited resources)
+  shuffle_partitions: 3
+  # Driver memory limit (4GB to stay within resource constraints)
+  driver_memory: "4g"
+  # Executor memory limit
+  executor_memory: "2g"
+
+# Dashboard Configuration
+dashboard:
+  # Local directory where Spark writes latest data for dashboard consumption
+  local_data_path: "/opt/spark-data/bitcoin_latest"
+  # Windows path for dashboard to read from (matches docker volume mount)
+  host_data_path: "d:/College/Sem6/BigData/bitcoin003/data/bitcoin_latest"
+  # Dashboard auto-refresh interval in milliseconds (10 seconds)
+  update_interval_ms: 10000
+  # Port for dashboard web server
+  port: 8050
+  # Host address for dashboard
+  host: "0.0.0.0"

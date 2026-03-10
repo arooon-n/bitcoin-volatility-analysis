@@ -1,0 +1,167 @@
+services:
+  # ======================= HADOOP NAMENODE =======================
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: unless-stopped
+    ports:
+      - "9870:9870" # NameNode Web UI
+      - "8020:8020" # HDFS RPC port
+    environment:
+      - CLUSTER_NAME=bitcoin-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    networks:
+      - bitcoin-net
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ======================= HADOOP DATANODE =======================
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    restart: unless-stopped
+    ports:
+      - "9864:9864" # DataNode Web UI
+    environment:
+      - CLUSTER_NAME=bitcoin-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_datanode_data_dir=/hadoop/dfs/data
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    networks:
+      - bitcoin-net
+    depends_on:
+      - namenode
+    mem_limit: 1g
+
+  # ======================= ZOOKEEPER (Required for Kafka) =======================
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    networks:
+      - bitcoin-net
+    mem_limit: 512m
+
+  # ======================= KAFKA BROKER =======================
+  kafka:
+    image: wurstmeister/kafka:2.13-2.8.1
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      # Kafka broker configuration
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Internal listener for Docker network
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      # Performance tuning
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      # Memory settings
+      KAFKA_HEAP_OPTS: "-Xmx1G -Xms512M"
+    volumes:
+      - kafka_data:/kafka
+    networks:
+      - bitcoin-net
+    depends_on:
+      - zookeeper
+    mem_limit: 1500m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics.sh",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ======================= SPARK MASTER =======================
+  spark-master:
+    image: apache/spark:3.5.0
+    container_name: spark-master
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # Spark Master Web UI
+      - "7077:7077" # Spark Master port
+      - "4040:4040" # Spark REST server
+      - "4041:4041" # Spark Application UI
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8080
+      - SPARK_DAEMON_MEMORY=512m
+    volumes:
+      - ./spark-jobs/target/scala-2.12:/opt/spark-jobs
+      - ./config:/opt/spark-config
+      - ./data/bitcoin_latest:/opt/spark-data/bitcoin_latest
+    networks:
+      - bitcoin-net
+    mem_limit: 1g
+
+  # ======================= SPARK WORKER =======================
+  spark-worker:
+    image: apache/spark:3.5.0
+    container_name: spark-worker
+    restart: unless-stopped
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+    volumes:
+      - ./spark-jobs/target/scala-2.12:/opt/spark-jobs
+      - ./config:/opt/spark-config
+      - ./data/bitcoin_latest:/opt/spark-data/bitcoin_latest
+    networks:
+      - bitcoin-net
+    depends_on:
+      - spark-master
+      - namenode
+      - kafka
+    mem_limit: 2500m
+
+networks:
+  bitcoin-net:
+    driver: bridge
+
+volumes:
+  namenode_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: d:/College/Sem6/BigData/bitcoin003/data/namenode
+  datanode_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: d:/College/Sem6/BigData/bitcoin003/data/datanode
+  kafka_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: d:/College/Sem6/BigData/bitcoin003/data/kafka

@@ -1,0 +1,96 @@
+# .gitignore for Bitcoin Volatility Analysis System
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Scala / sbt
+target/
+project/target/
+project/project/
+.bsp/
+.metals/
+.bloop/
+metals.sbt
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# Data directories (Docker volumes)
+data/namenode/*
+data/datanode/*
+data/kafka/*
+
+# Local runtime data
+/tmp/bitcoin_latest/
+/tmp/bitcoin_historical/
+
+# Configuration with sensitive data (uncomment if storing API keys)
+# config/config.yaml
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Checkpoint directories (if local)
+checkpoints/
+
+# Compiled JARs (keep source, ignore build artifacts)
+*.jar
+!project/plugins/*.jar
+
+# Docker
+.dockerignore
+
+# Backup files
+*.bak
+*.backup
+
+# IDE-specific
+*.iml
+.project
+.classpath
+.settings/
