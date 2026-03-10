@@ -94,3 +94,27 @@ checkpoints/
 .project
 .classpath
 .settings/
+
+# Spark output
+data/bitcoin_latest/
+
+# Spark checkpoints
+checkpoint/
+
+# Parquet outputs
+*.parquet
+
+# Spark metadata
+_SUCCESS
+*.crc
+
+# Python cache
+__pycache__/
+*.pyc
+
+# sbt
+target/
+project/target/
+
+# logs
+logs/
