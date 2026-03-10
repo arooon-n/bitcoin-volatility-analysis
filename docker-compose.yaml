@@ -106,7 +106,7 @@ services:
       - "8080:8080" # Spark Master Web UI
       - "7077:7077" # Spark Master port
       - "4040:4040" # Spark REST server
-      - "4041:4041" # Spark Application UI
+      - "4050:4050" # Spark Application UI (streaming job)
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
     environment:
       - SPARK_MASTER_HOST=spark-master

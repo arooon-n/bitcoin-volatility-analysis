@@ -45,7 +45,7 @@ MSYS_NO_PATHCONV=1 docker exec spark-master /opt/spark/bin/spark-submit \
   --conf spark.driver.host=spark-master \
   --conf spark.driver.bindAddress=0.0.0.0 \
   --conf spark.ui.enabled=true \
-  --conf spark.ui.port=4041 \
+  --conf spark.ui.port=4050 \
   --conf spark.driver.extraJavaOptions="-Dspark.ui.showConsoleProgress=true" \
   /opt/spark-jobs/bitcoin-volatility-assembly-1.0.jar \
   /opt/spark-config/config.yaml

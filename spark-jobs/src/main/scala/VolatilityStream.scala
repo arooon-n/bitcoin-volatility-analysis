@@ -230,23 +230,46 @@ object VolatilityStream {
         .writeStream
         .foreachBatch { (batchDF: org.apache.spark.sql.DataFrame, batchId: Long) =>
           if (!batchDF.isEmpty) {
-            val withMetrics = addVolatilityMetrics(batchDF)
+            println(s"[Batch $batchId] Processing ${batchDF.count()} records...")
+            try {
+              val withMetrics = addVolatilityMetrics(batchDF)
 
-            // Sink 1: HDFS Parquet partitioned by date
-            withMetrics
-              .write
-              .format("parquet")
-              .mode("append")
-              .partitionBy("date")
-              .save(s"$hdfsNamenode$hdfsHistoricalPath")
+              // Sink 1: HDFS Parquet partitioned by date
+              try {
+                withMetrics
+                  .write
+                  .format("parquet")
+                  .mode("append")
+                  .partitionBy("date")
+                  .save(s"$hdfsNamenode$hdfsHistoricalPath")
+                println(s"[Batch $batchId] ✓ Written to HDFS")
+              } catch {
+                case e: Exception =>
+                  println(s"[Batch $batchId] ✗ HDFS write failed: ${e.getMessage}")
+                  e.printStackTrace()
+              }
 
-            // Sink 2: Local JSON for dashboard
-            withMetrics
-              .select(dashboardCols.map(col): _*)
-              .write
-              .format("json")
-              .mode("append")
-              .save(localDataPath)
+              // Sink 2: Local JSON for dashboard
+              try {
+                withMetrics
+                  .select(dashboardCols.map(col): _*)
+                  .write
+                  .format("json")
+                  .mode("append")
+                  .save(localDataPath)
+                println(s"[Batch $batchId] ✓ Written to local JSON")
+              } catch {
+                case e: Exception =>
+                  println(s"[Batch $batchId] ✗ Local JSON write failed: ${e.getMessage}")
+                  e.printStackTrace()
+              }
+            } catch {
+              case e: Exception =>
+                println(s"[Batch $batchId] ✗ Processing failed: ${e.getMessage}")
+                e.printStackTrace()
+            }
+          } else {
+            println(s"[Batch $batchId] Empty batch, skipping.")
           }
         }
         .option("checkpointLocation", s"$hdfsNamenode$hdfsCheckpointStream")
